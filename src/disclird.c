@@ -1,5 +1,6 @@
 #include "disclird.h"
 #include "titlebar.h"
+#include "chatbox.h"
 
 #include <ncurses.h>
 
@@ -9,6 +10,7 @@
 
 void color_init();
 void test_tb();
+void test_cb();
 
 int main()
 {
@@ -19,10 +21,7 @@ int main()
 
 	color_init();
 	test_tb();
-	while (1)
-	{
-		addch(getch());
-	}
+	test_cb();
 
 	endwin();
 
@@ -37,6 +36,22 @@ void test_tb()
 	tb_draw();
 	refresh();
 	getch();
+}
+
+void test_cb()
+{
+	cb_init();
+	cb_draw_init();
+	cb_draw();
+	wchar_t ch;
+	do
+	{
+		get_wch((wint_t*) &ch);
+		cb_input(ch);
+		cb_draw();
+		refresh();
+	}
+	while (ch != 'x');
 }
 
 void color_init()

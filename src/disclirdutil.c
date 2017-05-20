@@ -14,12 +14,6 @@ void str_realloc_copy(char *src, char **dest)
 	memcpy(*dest, src, len);
 }
 
-void draw_ascii_box(int startx, int starty, int endx, int endy)
-{
-	move(starty, startx);
-	draw();
-}
-
 int wstrlen(wchar_t *str)
 {
 	int len = 0;

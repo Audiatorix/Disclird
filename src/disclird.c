@@ -6,6 +6,8 @@
 
 #include <signal.h>
 #include <unistd.h>
+#include <termios.h>
+#include <stdlib.h>
 
 
 void color_init();
@@ -17,6 +19,19 @@ int main()
 	dcli_window = initscr();
 	cbreak();
 	noecho();
+	keypad(stdscr, 1);
+	// Disable ^S and ^Q
+	struct termios term;
+	if (tcgetattr(0, &term) < 0)
+	{
+		dcli_ftl("Could not get termios attributes!");
+	}
+	term.c_iflag &= ~IXON;
+	if (tcsetattr(0, 0, &term) < 0)
+	{
+		dcli_ftl("Could not set termios attributes!");
+	}
+
 	getmaxyx(dcli_window, dcli_maxy, dcli_maxx);
 
 	color_init();
@@ -43,10 +58,10 @@ void test_cb()
 	cb_init();
 	cb_draw_init();
 	cb_draw();
-	wchar_t ch;
+	wint_t ch;
 	do
 	{
-		get_wch((wint_t*) &ch);
+		get_wch(&ch);
 		cb_input(ch);
 		cb_draw();
 		refresh();
@@ -69,4 +84,13 @@ void color_init()
 void dcli_color_set(uint8_t fg, uint8_t bg)
 {
 	attron(COLOR_PAIR((fg << 4) | bg));
+}
+
+void dcli_ftl(char *msg)
+{
+	nocbreak();
+	echo();
+	endwin();
+	printf("[FATAL] %s\n", msg);
+	exit(-1);
 }

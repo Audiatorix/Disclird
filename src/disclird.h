@@ -12,5 +12,7 @@ WINDOW *dcli_window;
 
 void dcli_color_set(uint8_t fg, uint8_t bg);
 
+void dcli_ftl(char *msg);
+
 
 #endif

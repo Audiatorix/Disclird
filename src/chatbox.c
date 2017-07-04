@@ -44,7 +44,7 @@ void cb_input(wchar_t ch)
 				else
 				{
 					cb_y++;
-				}	
+				}
 			}
 			else // Send to beginning of line if on first line
 			{
@@ -110,7 +110,7 @@ void cb_input(wchar_t ch)
 			if (cb_pos < cb_len - 1)
 			{
 				cb_pos++;
-				if (cb_x < cb_line_lens[cb_curline])
+				if (cb_x < cb_line_lens[cb_curline] - 1)
 				{
 					cb_x++;
 				}
@@ -126,6 +126,27 @@ void cb_input(wchar_t ch)
 					{
 						cb_y--;
 					}
+				}
+			}
+			else if (cb_pos == cb_len - 1)
+			{
+				cb_pos++;
+				if (cb_x == dcli_maxx)
+				{
+					cb_curline++;
+					cb_x = 0;
+					if (cb_curline > cb_top + 2)
+					{
+						cb_top++;
+					}
+					else
+					{
+						cb_y--;
+					}
+				}
+				else
+				{
+					cb_x++;
 				}
 			}
 			return;
@@ -149,26 +170,42 @@ int cb_gettext(wchar_t *out)
 
 void cb_draw()
 {
+	char buf[dcli_maxx];
+	sprintf(buf, "x: %d, y: %d, top: %d, pos: %d, curline: %d      ", cb_x, cb_y, cb_top, cb_pos, cb_curline);
+	move(dcli_maxy - 4, 0);
+	addstr(buf);
+
 	int pos = 0, i = 0;
 	for (; i < cb_top; i++)
 	{
 		pos += cb_line_lens[i];
 	}
 
+	dcli_color_set(COLOR_WHITE, COLOR_BLACK);
+	move(dcli_maxy - 3, 0);
 	for (int j = 0; j < 3 && pos < cb_len; j++)
 	{
 		addnwstr(cb_text + pos, cb_line_lens[i]);
 		pos += cb_line_lens[i];
 		i++;
 	}
+	move(dcli_maxy - (cb_y + 1), cb_x);
 }
 
 void cb_draw_init()
 {
-	move(3, 0);
-	for (int i = 0; i < dcli_maxx; i++)
+	move(dcli_maxy - 4, 0);
+	dcli_color_set(COLOR_BLACK, COLOR_WHITE);
+	int i = 0;
+	for (; i < dcli_maxx; i++)
 	{
-		addch((char) 219);
+		addch(' ');
+	}
+	dcli_color_set(COLOR_BLACK, COLOR_BLACK);
+	i = dcli_maxx * 3 - 3;
+	for (int j = 0; j < i; j++)
+	{
+		addch(' ');
 	}
 }
 
@@ -184,13 +221,13 @@ void cb_init()
 		cb_text[i] = 'a' + i;
 		cb_text[i + 21] = 'a' + i;
 	}
+	cb_line_lens[0] = 21;
+	cb_line_lens[1] = 20;
 	cb_text[20] = '\n';
-	cb_len = 42;
+	cb_len = 41;
 }
 
 void cb_resize()
 {
 	// TODO implement
 }
-
-

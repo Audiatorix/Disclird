@@ -5,16 +5,18 @@
 #include <ncurses.h>
 
 #include <stdlib.h>
+#include <string.h>
 
 
-int cb_x = 0,	// Current relative x
-    cb_y = 2,	// Current relative y
-    cb_pos = 0,	// Current position along the text
-    cb_top = 0,	// Index of the topmost line of text displayed
-    cb_len = 0, // Text length
+int cb_x = 0,		// Current relative x
+    cb_y = 2,		// Current relative y
+    cb_pos = 0,		// Current position along the text
+    cb_top = 0,		// Index of the topmost line of text displayed
+    cb_lines = 0,	// Number of lines
+    cb_len = 0, 	// Text length
     cb_curline = 0;	// Current line along text
 wchar_t *cb_text;
-uint8_t *cb_line_lens; // The length of each line (to make display easier)
+uint16_t *cb_line_lens;	// The length of each line (to make display easier)
 
 
 void cb_input(wchar_t ch)
@@ -26,15 +28,14 @@ void cb_input(wchar_t ch)
 			{
 				cb_curline--;
 				cb_pos -= cb_x + 1;
-				uint8_t diff = cb_x - cb_line_lens[cb_curline] + 1;
+				int diff = cb_x - cb_line_lens[cb_curline] + 1;
 				if (diff > 0)
 				{
 					cb_x -= diff;
-					cb_pos -= 1;
 				}
 				else
 				{
-					cb_pos += diff - 2;
+					cb_pos += diff;
 				}
 
 				if (cb_curline < cb_top)
@@ -53,15 +54,20 @@ void cb_input(wchar_t ch)
 			}
 			return;
 		case KEY_DOWN:
-			if (cb_pos + cb_line_lens[cb_curline] < cb_len)
+			if (cb_curline + 1 < cb_lines)
 			{
+				cb_pos += cb_line_lens[cb_curline] - cb_x - 1;
 				cb_curline++;
-				cb_pos += cb_line_lens[cb_curline] - cb_x;
-				uint8_t diff = cb_x - cb_line_lens[cb_curline] + 1;
+				int diff = cb_x - cb_line_lens[cb_curline] + 1;
 				if (diff > 0)
 				{
 					cb_x -= diff;
 					cb_pos += cb_line_lens[cb_curline];
+					if (cb_curline + 1 == cb_lines)
+					{
+						cb_pos++;
+						cb_x++;
+					}
 				}
 				else
 				{
@@ -79,8 +85,8 @@ void cb_input(wchar_t ch)
 			}
 			else // Send to end of line if on last line
 			{
-				cb_pos = cb_len - 1;
-				cb_x = cb_line_lens[cb_curline] - 1;
+				cb_pos = cb_len;
+				cb_x = cb_line_lens[cb_curline];
 			}
 			return;
 		case KEY_LEFT:
@@ -151,30 +157,41 @@ void cb_input(wchar_t ch)
 			}
 			return;
 	}
+	
 }
 
 void cb_addtext(wchar_t *text, int len)
 {
-	// TODO implement
+	// TODO implement (does this need to exist?)
 }
 
 void cb_clear()
 {
-	// TODO implement
+	cb_x = 0;
+	cb_y = 2;
+	cb_pos = 0;
+	cb_top = 0;
+	cb_lines = 0;
+	cb_len = 0;
+	cb_curline = 0;
+	memset(cb_line_lens, 0, 4000);
 }
 
 int cb_gettext(wchar_t *out)
 {
-	// TODO implement
+	memcpy(out, cb_text, cb_len);
+	*(out + cb_len) = 0;
+	return cb_len;
 }
 
 void cb_draw()
 {
-	char buf[dcli_maxx];
+	/*char buf[dcli_maxx];
 	sprintf(buf, "x: %d, y: %d, top: %d, pos: %d, curline: %d      ", cb_x, cb_y, cb_top, cb_pos, cb_curline);
 	move(dcli_maxy - 4, 0);
-	addstr(buf);
+	addstr(buf);*/
 
+	// skip undisplayed lines above top
 	int pos = 0, i = 0;
 	for (; i < cb_top; i++)
 	{
@@ -201,30 +218,34 @@ void cb_draw_init()
 	{
 		addch(' ');
 	}
-	dcli_color_set(COLOR_BLACK, COLOR_BLACK);
+	/*dcli_color_set(COLOR_BLACK, COLOR_BLACK);
 	i = dcli_maxx * 3 - 3;
 	for (int j = 0; j < i; j++)
 	{
 		addch(' ');
-	}
+	}*/
 }
 
 void cb_init()
 {
-	cb_text = malloc(2001 * sizeof(wchar_t));
-	cb_line_lens = malloc(2000);
+	cb_text = malloc(2000 * sizeof(wchar_t));
+	cb_line_lens = malloc(4000);
 
 
 	// temporary
-	for (int i = 0; i < 20; i++)
+	for (int i = 0; i < 5; i++)
 	{
 		cb_text[i] = 'a' + i;
-		cb_text[i + 21] = 'a' + i;
 	}
-	cb_line_lens[0] = 21;
+	cb_line_lens[0] = 6;
+	for (int i = 0; i < 20; i++)
+	{
+		cb_text[6 + i] = 'a' + i;
+	}
 	cb_line_lens[1] = 20;
-	cb_text[20] = '\n';
-	cb_len = 41;
+	cb_text[5] = '\n';
+	cb_len = 26;
+	cb_lines = 2;
 }
 
 void cb_resize()
